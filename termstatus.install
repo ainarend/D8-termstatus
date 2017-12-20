@@ -1,0 +1,72 @@
+<?php
+use Drupal\user\Entity\Role;
+use Drupal\user\RoleInterface;
+
+/**
+ * Grants the view published terms permissions
+ * to anonymous and authenticated users.
+ *
+ * Implements hook_install().
+ */
+function termstatus_install() {
+
+  $vocabularies = termstatus_get_vocabularies();
+
+  if ($vocabularies) {
+
+    foreach ($vocabularies as $vocabulary) {
+      $permission = 'view published terms in ' . $vocabulary->id();
+
+      $anonymous_rid = RoleInterface::ANONYMOUS_ID;
+      $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
+
+      if ($anonymous_role = Role::load($anonymous_rid)) {
+        $anonymous_role->grantPermission($permission);
+      }
+      if ($authenticated_role = Role::load($authenticated_rid)) {
+        $authenticated_role->grantPermission($permission);
+      }
+
+    }
+  }
+}
+
+
+/**
+ * Revokes the view published terms permissions
+ * to anonymous and authenticated users.
+ *
+ * Implements hook_uninstall().
+ */
+function termstatus_uninstall() {
+
+  $vocabularies = termstatus_get_vocabularies();
+
+  if ($vocabularies) {
+    foreach ($vocabularies as $vocabulary) {
+      $permission = 'view published terms in ' . $vocabulary->id();
+
+      $anonymous_rid = RoleInterface::ANONYMOUS_ID;
+      $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
+
+      if ($anonymous_role = Role::load($anonymous_rid)) {
+        $anonymous_role->revokePermission($permission);
+      }
+      if ($authenticated_role = Role::load($authenticated_rid)) {
+        $authenticated_role->revokePermission($permission);
+      }
+
+    }
+  }
+}
+
+/**
+ * Helper function to get all vocabularies.
+ *
+ * @return \Drupal\Core\Entity\EntityInterface[]
+ */
+function termstatus_get_vocabularies() {
+  return \Drupal::entityTypeManager()
+                 ->getStorage('taxonomy_vocabulary')
+                 ->loadMultiple();
+}

@@ -1,0 +1,7 @@
+name: 'Taxonomy Term Status'
+type: module
+description: 'Add a published/unpublished status field to taxonomy terms'
+core: 8.x
+package: 'Taxonomy Term Status'
+dependencies:
+  - taxonomy
