@@ -22,13 +22,16 @@ function termstatus_install() {
 
       if ($anonymous_role = Role::load($anonymous_rid)) {
         $anonymous_role->grantPermission($permission);
+        $anonymous_role->save();
       }
       if ($authenticated_role = Role::load($authenticated_rid)) {
         $authenticated_role->grantPermission($permission);
+        $authenticated_role->save();
       }
 
     }
   }
+
 }
 
 
@@ -51,9 +54,11 @@ function termstatus_uninstall() {
 
       if ($anonymous_role = Role::load($anonymous_rid)) {
         $anonymous_role->revokePermission($permission);
+        $anonymous_role->save();
       }
       if ($authenticated_role = Role::load($authenticated_rid)) {
         $authenticated_role->revokePermission($permission);
+        $authenticated_role->save();
       }
 
     }
