@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * @file
+ * Contains general functions and hooks used for term status.
+ */
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultReasonInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\taxonomy\Entity\Term;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function termstatus_entity_base_field_info(\Drupal\Core\Entity\EntityTypeInterface $entity_type) {
+  $fields = [];
+  if ($entity_type->id() === 'taxonomy_term') {
+    //$fields['status']->setClass('\Drupal\termstatus\Entity\TermStatus');
+    $fields['status'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('Published'))
+      ->setDescription(t('Whether the taxonomy term is published or unpublished.'))
+      ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
+      ->setDefaultValue(TRUE)
+      ->setDisplayOptions('form', [
+       'type' => 'boolean_checkbox',
+       'settings' => [
+         'display_label' => TRUE,
+       ],
+       'weight' => 50,
+      ])
+      ->setDisplayConfigurable('form', TRUE);
+  }
+  return $fields;
+}
+
+/**
+ * Helper function to get all vocabularies.
+ *
+ * @return \Drupal\Core\Entity\EntityInterface[]
+ */
+function termstatus_get_vocabularies() {
+  return \Drupal::entityTypeManager()
+                ->getStorage('taxonomy_vocabulary')
+                ->loadMultiple();
+}
+
+/**
+ * Helper function to get the term status.
+ *
+ * @param \Drupal\taxonomy\Entity\Term $term
+ *
+ * @return bool
+ */
+function termstatus_get_status(Term $term) {
+  return $term->get('status')->value ? TRUE : FALSE;
+}
+
+/**
+ * Implements hook_entity_access().
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ * @param $operation
+ * @param \Drupal\Core\Session\AccountInterface $account
+ *
+ * @return \Drupal\Core\Access\AccessResult|\Drupal\Core\Access\AccessResultNeutral
+ */
+function termstatus_entity_access(EntityInterface $entity, $operation, AccountInterface $account) {
+  if ($entity instanceof Term) {
+    $published = termstatus_get_status($entity);
+    $vid = $entity->bundle();
+    if ($published) {
+      $permission = 'view published terms in ' . $vid;
+      $access_result = AccessResult::forbiddenIf(!$account->hasPermission($permission));
+      if (!$access_result->isAllowed()) {
+        throw new AccessDeniedHttpException($access_result instanceof AccessResultReasonInterface ? $access_result->getReason() : NULL);
+      }
+    }
+    else {
+      $permission = 'view unpublished terms in ' . $vid;
+      $access_result = AccessResult::forbiddenIf(!$account->hasPermission($permission));
+      if (!$access_result->isAllowed()) {
+        throw new AccessDeniedHttpException($access_result instanceof AccessResultReasonInterface ? $access_result->getReason() : NULL);
+      }
+    }
+    return AccessResult::neutral();
+  }
+}

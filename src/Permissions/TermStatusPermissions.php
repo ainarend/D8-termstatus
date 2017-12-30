@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\termstatus;
+namespace Drupal\termstatus\Permissions;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;

@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * @file
+ * Install hooks are used to grant roles the permission to view published terms.
+ */
+
 use Drupal\user\Entity\Role;
 use Drupal\user\RoleInterface;
 
@@ -10,30 +16,42 @@ use Drupal\user\RoleInterface;
  */
 function termstatus_install() {
 
+  // Create field storage for the 'Status' base field.
+  $field_manager = \Drupal::service('entity_field.manager');
+  $field_storage_manager = \Drupal::service('field_storage_definition.listener');
+  $definition = $field_manager->getFieldStorageDefinitions('taxonomy_term')['status'];
+  $field_storage_manager->onFieldStorageDefinitionCreate($definition);
+
+  // Migrate all the existing terms to published state.
+
+
+  // Add the view permissions for default roles.
   $vocabularies = termstatus_get_vocabularies();
 
   if ($vocabularies) {
 
     foreach ($vocabularies as $vocabulary) {
-      $permission = 'view published terms in ' . $vocabulary->id();
+      $vid = $vocabulary->id();
 
-      $anonymous_rid = RoleInterface::ANONYMOUS_ID;
-      $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
+      $terms = \Drupal::entityTypeManager()
+                      ->getStorage('taxonomy_term')
+                      ->loadTree($vid, 0, NULL, TRUE);
 
-      if ($anonymous_role = Role::load($anonymous_rid)) {
-        $anonymous_role->grantPermission($permission);
-        $anonymous_role->save();
+      $permission = 'view published terms in ' . $vid;
+
+      if (!empty($terms)) {
+        foreach ($terms as $term) {
+          $term->set('status', NULL);
+          $term->save();
+        }
       }
-      if ($authenticated_role = Role::load($authenticated_rid)) {
-        $authenticated_role->grantPermission($permission);
-        $authenticated_role->save();
-      }
+
+      termstatus_grant_permission_to_default_roles($permission);
 
     }
   }
 
 }
-
 
 /**
  * Revokes the view published terms permissions
@@ -43,35 +61,60 @@ function termstatus_install() {
  */
 function termstatus_uninstall() {
 
+  $field_manager = \Drupal::service('entity_field.manager');
+  $field_storage_manager = \Drupal::service('field_storage_definition.listener');
+  $definition = $field_manager->getFieldStorageDefinitions('taxonomy_term')['status'];
+  $field_storage_manager->onFieldStorageDefinitionDelete($definition);
+
   $vocabularies = termstatus_get_vocabularies();
 
   if ($vocabularies) {
     foreach ($vocabularies as $vocabulary) {
+
+      $terms = \Drupal::entityTypeManager()
+                      ->getStorage('taxonomy_term')
+                      ->loadTree($vid, 0, NULL, TRUE);
+
+      if (!empty($terms)) {
+        foreach ($terms as $term) {
+          $term->set('status', TRUE);
+          $term->save();
+        }
+      }
+
       $permission = 'view published terms in ' . $vocabulary->id();
 
-      $anonymous_rid = RoleInterface::ANONYMOUS_ID;
-      $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
-
-      if ($anonymous_role = Role::load($anonymous_rid)) {
-        $anonymous_role->revokePermission($permission);
-        $anonymous_role->save();
-      }
-      if ($authenticated_role = Role::load($authenticated_rid)) {
-        $authenticated_role->revokePermission($permission);
-        $authenticated_role->save();
-      }
+      termstatus_revoke_permission_from_default_roles($permission);
 
     }
   }
 }
 
-/**
- * Helper function to get all vocabularies.
- *
- * @return \Drupal\Core\Entity\EntityInterface[]
- */
-function termstatus_get_vocabularies() {
-  return \Drupal::entityTypeManager()
-                 ->getStorage('taxonomy_vocabulary')
-                 ->loadMultiple();
+function termstatus_grant_permission_to_default_roles($permission) {
+  $anonymous_rid = RoleInterface::ANONYMOUS_ID;
+  $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
+
+  if ($anonymous_role = Role::load($anonymous_rid)) {
+    $anonymous_role->grantPermission($permission);
+    $anonymous_role->save();
+  }
+  if ($authenticated_role = Role::load($authenticated_rid)) {
+    $authenticated_role->grantPermission($permission);
+    $authenticated_role->save();
+  }
+}
+
+
+function termstatus_revoke_permission_from_default_roles($permission) {
+  $anonymous_rid = RoleInterface::ANONYMOUS_ID;
+  $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
+
+  if ($anonymous_role = Role::load($anonymous_rid)) {
+    $anonymous_role->revokePermission($permission);
+    $anonymous_role->save();
+  }
+  if ($authenticated_role = Role::load($authenticated_rid)) {
+    $authenticated_role->revokePermission($permission);
+    $authenticated_role->save();
+  }
 }

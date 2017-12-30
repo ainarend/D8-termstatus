@@ -1,2 +1,2 @@
 permission_callbacks:
-  - Drupal\termstatus\TermStatusPermissions::permissions
+  - Drupal\termstatus\Permissions\TermStatusPermissions::permissions
