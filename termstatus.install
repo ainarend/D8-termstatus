@@ -1,16 +1,14 @@
 <?php
-
 /**
  * @file
- * Install hooks are used to grant roles the permission to view published terms.
+ * Contains install hooks for termstatus module.
  */
 
 use Drupal\user\Entity\Role;
 use Drupal\user\RoleInterface;
 
 /**
- * Grants the view published terms permissions
- * to anonymous and authenticated users.
+ * Handle the out-of-the box necessities.
  *
  * Implements hook_install().
  */
@@ -22,10 +20,6 @@ function termstatus_install() {
   $definition = $field_manager->getFieldStorageDefinitions('taxonomy_term')['status'];
   $field_storage_manager->onFieldStorageDefinitionCreate($definition);
 
-  // Migrate all the existing terms to published state.
-
-
-  // Add the view permissions for default roles.
   $vocabularies = termstatus_get_vocabularies();
 
   if ($vocabularies) {
@@ -37,8 +31,7 @@ function termstatus_install() {
                       ->getStorage('taxonomy_term')
                       ->loadTree($vid, 0, NULL, TRUE);
 
-      $permission = 'view published terms in ' . $vid;
-
+      // Migrate all existing terms to published state.
       if (!empty($terms)) {
         foreach ($terms as $term) {
           $term->set('status', TRUE);
@@ -46,7 +39,9 @@ function termstatus_install() {
         }
       }
 
-      termstatus_grant_permission_to_default_roles($permission);
+      // Give existing roles the view permission.
+      $permission = 'view published terms in ' . $vid;
+      termstatus_grant_permission_to_existing_roles($permission);
 
     }
   }
@@ -54,56 +49,52 @@ function termstatus_install() {
 }
 
 /**
- * Revokes the view published terms permissions
- * to anonymous and authenticated users.
+ * Revokes view permissions from existing roles.
  *
  * Implements hook_uninstall().
  */
 function termstatus_uninstall() {
 
-  /*$field_manager = \Drupal::service('entity_field.manager');
-  $field_storage_manager = \Drupal::service('field_storage_definition.listener');
-  $definition = $field_manager->getFieldStorageDefinitions('taxonomy_term')['status'];
-  $field_storage_manager->onFieldStorageDefinitionDelete($definition);*/
-
   $vocabularies = termstatus_get_vocabularies();
 
   if ($vocabularies) {
+    /** @var \Drupal\taxonomy\Entity\Vocabulary $vocabulary */
     foreach ($vocabularies as $vocabulary) {
 
       $permission = 'view published terms in ' . $vocabulary->id();
-
-      termstatus_revoke_permission_from_default_roles($permission);
+      termstatus_grant_permission_to_existing_roles($permission);
 
     }
   }
 }
 
-function termstatus_grant_permission_to_default_roles($permission) {
-  $anonymous_rid = RoleInterface::ANONYMOUS_ID;
-  $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
+/**
+ * Helper function to grant existing roles view permissions.
+ *
+ * @param $permission
+ */
+function termstatus_grant_permission_to_existing_roles($permission) {
+  $roles = Role::loadMultiple();
 
-  if ($anonymous_role = Role::load($anonymous_rid)) {
-    $anonymous_role->grantPermission($permission);
-    $anonymous_role->save();
-  }
-  if ($authenticated_role = Role::load($authenticated_rid)) {
-    $authenticated_role->grantPermission($permission);
-    $authenticated_role->save();
+  /** @var Role $role */
+  foreach ($roles as $role) {
+    $role->grantPermission($permission);
+    $role->save();
   }
 }
 
+/**
+ * Helper function to revoke existing roles of view permissions.
+ *
+ * @param $permission
+ */
+function termstatus_revoke_permission_from_existing_roles($permission) {
 
-function termstatus_revoke_permission_from_default_roles($permission) {
-  $anonymous_rid = RoleInterface::ANONYMOUS_ID;
-  $authenticated_rid = RoleInterface::AUTHENTICATED_ID;
+  $roles = Role::loadMultiple();
 
-  if ($anonymous_role = Role::load($anonymous_rid)) {
-    $anonymous_role->revokePermission($permission);
-    $anonymous_role->save();
-  }
-  if ($authenticated_role = Role::load($authenticated_rid)) {
-    $authenticated_role->revokePermission($permission);
-    $authenticated_role->save();
+  /** @var Role $role */
+  foreach ($roles as $role) {
+    $role->revokePermission($permission);
+    $role->save();
   }
 }

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Contains \Drupal\termstatus\Permissions\TermStatusPermissions.
+ */
+
 namespace Drupal\termstatus\Permissions;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
