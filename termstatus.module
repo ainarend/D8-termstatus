@@ -12,6 +12,29 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\taxonomy\Entity\Term;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+
+/**
+ * Helper function to get all vocabularies.
+ *
+ * @return \Drupal\Core\Entity\EntityInterface[]
+ */
+function termstatus_get_vocabularies() {
+  return \Drupal::entityTypeManager()
+                ->getStorage('taxonomy_vocabulary')
+                ->loadMultiple();
+}
+
+/**
+ * Helper function to get the term status.
+ *
+ * @param \Drupal\taxonomy\Entity\Term $term
+ *
+ * @return bool
+ */
+function termstatus_get_status(Term $term) {
+  return $term->get('status')->value ? TRUE : FALSE;
+}
+
 /**
  * Implements hook_entity_base_field_info().
  */
@@ -38,28 +61,6 @@ function termstatus_entity_base_field_info(\Drupal\Core\Entity\EntityTypeInterfa
 }
 
 /**
- * Helper function to get all vocabularies.
- *
- * @return \Drupal\Core\Entity\EntityInterface[]
- */
-function termstatus_get_vocabularies() {
-  return \Drupal::entityTypeManager()
-                ->getStorage('taxonomy_vocabulary')
-                ->loadMultiple();
-}
-
-/**
- * Helper function to get the term status.
- *
- * @param \Drupal\taxonomy\Entity\Term $term
- *
- * @return bool
- */
-function termstatus_get_status(Term $term) {
-  return $term->get('status')->value ? TRUE : FALSE;
-}
-
-/**
  * Implements hook_entity_access().
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
@@ -70,22 +71,30 @@ function termstatus_get_status(Term $term) {
  */
 function termstatus_entity_access(EntityInterface $entity, $operation, AccountInterface $account) {
   if ($entity instanceof Term) {
+
     $published = termstatus_get_status($entity);
     $vid = $entity->bundle();
+
     if ($published) {
       $permission = 'view published terms in ' . $vid;
       $access_result = AccessResult::forbiddenIf(!$account->hasPermission($permission));
-      if (!$access_result->isAllowed()) {
+
+      if ($access_result->isForbidden()) {
         throw new AccessDeniedHttpException($access_result instanceof AccessResultReasonInterface ? $access_result->getReason() : NULL);
       }
+
     }
     else {
       $permission = 'view unpublished terms in ' . $vid;
       $access_result = AccessResult::forbiddenIf(!$account->hasPermission($permission));
-      if (!$access_result->isAllowed()) {
+
+      if ($access_result->isForbidden()) {
         throw new AccessDeniedHttpException($access_result instanceof AccessResultReasonInterface ? $access_result->getReason() : NULL);
       }
+
     }
+
     return AccessResult::neutral();
+
   }
 }

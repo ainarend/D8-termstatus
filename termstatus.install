@@ -41,7 +41,7 @@ function termstatus_install() {
 
       if (!empty($terms)) {
         foreach ($terms as $term) {
-          $term->set('status', NULL);
+          $term->set('status', TRUE);
           $term->save();
         }
       }
@@ -61,26 +61,15 @@ function termstatus_install() {
  */
 function termstatus_uninstall() {
 
-  $field_manager = \Drupal::service('entity_field.manager');
+  /*$field_manager = \Drupal::service('entity_field.manager');
   $field_storage_manager = \Drupal::service('field_storage_definition.listener');
   $definition = $field_manager->getFieldStorageDefinitions('taxonomy_term')['status'];
-  $field_storage_manager->onFieldStorageDefinitionDelete($definition);
+  $field_storage_manager->onFieldStorageDefinitionDelete($definition);*/
 
   $vocabularies = termstatus_get_vocabularies();
 
   if ($vocabularies) {
     foreach ($vocabularies as $vocabulary) {
-
-      $terms = \Drupal::entityTypeManager()
-                      ->getStorage('taxonomy_term')
-                      ->loadTree($vid, 0, NULL, TRUE);
-
-      if (!empty($terms)) {
-        foreach ($terms as $term) {
-          $term->set('status', TRUE);
-          $term->save();
-        }
-      }
 
       $permission = 'view published terms in ' . $vocabulary->id();
 
