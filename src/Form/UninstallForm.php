@@ -40,9 +40,12 @@ class UninstallForm extends ConfirmFormBase {
    * {@inheritdoc}
    */
   public function getDescription() {
-    return $this->t('This helper form clears all the Term Status data. The'
-      . ' form allows this module to be uninstalled for Drupal Core versions '
-      . 'lower than 8.5.');
+    return $this->t('This helper form clears all the Term Status data. '
+      . 'The form allows this module to be uninstalled for Drupal versions '
+      . 'lower than 8.5. Run this form if you want to uninstall the module '
+      . 'or if you want to make all terms unpublished. Be careful when running '
+      . 'this form as there is no way to recover the term status states '
+      . 'without a database backup.');
   }
 
   /**
