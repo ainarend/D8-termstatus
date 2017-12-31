@@ -7,6 +7,7 @@
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\taxonomy\Entity\Term;
@@ -36,8 +37,12 @@ function termstatus_get_status(Term $term) {
 
 /**
  * Implements hook_entity_base_field_info().
+ *
+ * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+ *
+ * @return array
  */
-function termstatus_entity_base_field_info(\Drupal\Core\Entity\EntityTypeInterface $entity_type) {
+function termstatus_entity_base_field_info(EntityTypeInterface $entity_type) {
   $fields = [];
   if ($entity_type->id() === 'taxonomy_term') {
     //$fields['status']->setClass('\Drupal\termstatus\Entity\TermStatus');
