@@ -19,5 +19,5 @@ For versions earlier than 8.5.x there is a helper form created that cleans the d
 /admin/modules/uninstall/termstatus
 
 ## To do
-* Vocabulary settings to set default state for the terms.
-* Update Term entity to allow usage of isPublished().
+1. Vocabulary settings to set default state for the terms.
+2. Update Term entity to allow usage of isPublished().

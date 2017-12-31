@@ -45,6 +45,7 @@ function termstatus_get_status(Term $term) {
 function termstatus_entity_base_field_info(EntityTypeInterface $entity_type) {
   $fields = [];
   if ($entity_type->id() === 'taxonomy_term') {
+    // @TODO (see readme for the list): Possible fix for to do number 2?
     //$fields['status']->setClass('\Drupal\termstatus\Entity\TermStatus');
     $fields['status'] = BaseFieldDefinition::create('boolean')
       ->setLabel(t('Published'))
@@ -59,7 +60,13 @@ function termstatus_entity_base_field_info(EntityTypeInterface $entity_type) {
        ],
        'weight' => 50,
       ])
-      ->setDisplayConfigurable('form', TRUE);
+      ->setDisplayConfigurable('form', FALSE)
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'hidden',
+        'weight' => -5,
+      ])
+      ->setDisplayConfigurable('view', FALSE);
   }
   return $fields;
 }
