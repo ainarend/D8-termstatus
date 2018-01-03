@@ -52,7 +52,7 @@ class TermStatusPermissions implements ContainerInjectionInterface {
                          ->getStorage('taxonomy_vocabulary')
                          ->loadMultiple();
 
-    if ($vocabularies) {
+    if (!empty($vocabularies)) {
       foreach ($vocabularies as $vocabulary) {
         $permissions += [
           'view published terms in ' . $vocabulary->id() => [

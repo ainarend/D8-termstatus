@@ -7,10 +7,8 @@
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\taxonomy\Entity\Term;
+use Drupal\termstatus\Entity\TermWithStatus;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -25,50 +23,14 @@ function termstatus_get_vocabularies() {
 }
 
 /**
- * Helper function to get the term status.
+ * Implements hook_entity_type_build().
  *
- * @param \Drupal\taxonomy\Entity\Term $term
- *
- * @return bool
+ * @param array $entity_types
  */
-function termstatus_get_status(Term $term) {
-  return $term->get('status')->value ? TRUE : FALSE;
-}
-
-/**
- * Implements hook_entity_base_field_info().
- *
- * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
- *
- * @return array
- */
-function termstatus_entity_base_field_info(EntityTypeInterface $entity_type) {
-  $fields = [];
-  if ($entity_type->id() === 'taxonomy_term') {
-    // @TODO (see readme for the list): Possible fix for to do number 2?
-    //$fields['status']->setClass('\Drupal\termstatus\Entity\TermStatus');
-    $fields['status'] = BaseFieldDefinition::create('boolean')
-      ->setLabel(t('Published'))
-      ->setDescription(t('Whether the taxonomy term is published or unpublished.'))
-      ->setRevisionable(TRUE)
-      ->setTranslatable(TRUE)
-      ->setDefaultValue(TRUE)
-      ->setDisplayOptions('form', [
-       'type' => 'boolean_checkbox',
-       'settings' => [
-         'display_label' => TRUE,
-       ],
-       'weight' => 50,
-      ])
-      ->setDisplayConfigurable('form', FALSE)
-      ->setDisplayOptions('view', [
-        'label' => 'hidden',
-        'type' => 'hidden',
-        'weight' => -5,
-      ])
-      ->setDisplayConfigurable('view', FALSE);
+function termstatus_entity_type_build(array &$entity_types) {
+  if (!empty($entity_types['taxonomy_term'])) {
+    $entity_types['taxonomy_term']->setClass('\Drupal\termstatus\Entity\TermWithStatus');
   }
-  return $fields;
 }
 
 /**
@@ -81,9 +43,9 @@ function termstatus_entity_base_field_info(EntityTypeInterface $entity_type) {
  * @return \Drupal\Core\Access\AccessResult|\Drupal\Core\Access\AccessResultNeutral
  */
 function termstatus_entity_access(EntityInterface $entity, $operation, AccountInterface $account) {
-  if ($entity instanceof Term) {
+  if ($entity instanceof TermWithStatus) {
 
-    $published = termstatus_get_status($entity);
+    $published = $entity->isPublished();
     $vid = $entity->bundle();
 
     if ($published) {

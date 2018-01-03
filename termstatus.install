@@ -33,7 +33,7 @@ function termstatus_install() {
       // Migrate all existing terms to published state.
       if (!empty($terms)) {
         foreach ($terms as $term) {
-          $term->set('status', TRUE);
+          $term->setStatus(TRUE);
           $term->save();
         }
       }
@@ -48,7 +48,7 @@ function termstatus_install() {
 }
 
 /**
- * Revokes view permissions from existing roles.
+ * Handles the necessary changes for module uninstall.
  *
  * Implements hook_uninstall().
  */
@@ -60,11 +60,33 @@ function termstatus_uninstall() {
     /** @var \Drupal\taxonomy\Entity\Vocabulary $vocabulary */
     foreach ($vocabularies as $vocabulary) {
 
-      $permission = 'view published terms in ' . $vocabulary->id();
+      $vid = $vocabulary->id();
+
+      // To be able to delete the status field storage,
+      // we set the status field for all terms to null.
+      $terms = \Drupal::entityTypeManager()
+                      ->getStorage('taxonomy_term')
+                      ->loadTree($vid, 0, NULL, TRUE);
+
+      if (!empty($terms)) {
+        foreach ($terms as $term) {
+          $term->setStatus(NULL);
+          $term->save();
+        }
+      }
+
+      $permission = 'view published terms in ' . $vid;
       termstatus_grant_permission_to_existing_roles($permission);
 
     }
   }
+
+  // Delete field storage for the 'Status' base field.
+  $field_manager = \Drupal::service('entity_field.manager');
+  $field_storage_manager = \Drupal::service('field_storage_definition.listener');
+  $definition = $field_manager->getFieldStorageDefinitions('taxonomy_term')['status'];
+  $field_storage_manager->onFieldStorageDefinitionDelete($definition);
+
 }
 
 /**

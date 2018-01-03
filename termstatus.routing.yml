@@ -1,7 +1,0 @@
-termstatus.helper_form:
-  path: '/admin/modules/uninstall/termstatus'
-  defaults:
-    _title: 'Term Status uninstall helper'
-    _form: '\Drupal\termstatus\Form\UninstallForm'
-  requirements:
-    _permission: 'access administration pages'
